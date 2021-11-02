@@ -221,11 +221,43 @@ mean(timedata$status)
 #proportional means and rates model
 unique(timedata$playername)
 
-model1.cox = reReg(Recur(tstart %to% tstop, playername, event, status) ~ ttlmp + avgmp + Age, 
-                B = 145, data = timedata, model = "cox|cox")
+timedata2 = timedata
+timedata2$status2 = timedata2$status
+timedata2$event2 = timedata2$event
+
+for (i in 1:nrow(timedata2)){
+  if (timedata2$tstop[i] == 82){
+    timedata2$event2[i] = 0
+    if (timedata2$status[i] == 1){
+      timedata2$status2[i] = 1
+    }
+    else {
+      timedata2$status2[i] = 0
+      }
+  }
+  else if (timedata2$tstop[i] != 82){
+    timedata2$status2[i] = 0
+    timedata2$event2[i] = 1    
+  }
+}
+
+library(data.table)
+timedata3 = data.table(timedata2, key="playername")
+timedata4 = timedata3[, .SD[which.max(tstop), ], by="playername"]
+timedata4$event2 = 0
+timedata4$status2 = 1
+
+timedata5 = rbind(timedata3, timedata4)
+
+
+
+model1.cox = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ ttlmp + avgmp + Age, 
+                B = 145, data = timedata2, model = "cox|cox")
 summary(model1.cox)
+
+
 #********************test for reGeg regression below****************************
-#Cox regression 1
+#Cox regression (baseline)
 set.seed(11022021)
 datCox = simGSC(200, summary = TRUE)
 fit.cox = reReg(Recur(t.start %to% t.stop, id, event, status) ~ x1 + x2, 
