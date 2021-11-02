@@ -218,8 +218,11 @@ mean(timedata$status)
 #Cook and Lawless
 #proportional means and rates model
 library(reReg)
+#####################test for reGeg regression below
 set.seed(11022021)
-datCox <- simGSC(200, summary = TRUE)
+datCox = simGSC(200, summary = TRUE)
+
+
 
 #Andersen-Gill (AG) Marginal means and rates model:
 model.1 = coxph(Surv(tstart,tstop,status) ~ Age + ttlmp + avgmp + cluster(playername), method="breslow", data = timedata)
