@@ -7,6 +7,8 @@ library(ggplot2)
 library (splines)
 library(stringr)
 library(factoextra)
+library(reReg)
+library(Rcpp)
 
 # read and filter players with enough game attendance and minutes
 #read all .csv documents
@@ -217,12 +219,37 @@ mean(timedata$status)
 #recurrent event data regression
 #Cook and Lawless
 #proportional means and rates model
-library(reReg)
-#####################test for reGeg regression below
+unique(timedata$playername)
+
+model1.cox = reReg(Recur(tstart %to% tstop, playername, event, status) ~ ttlmp + avgmp + Age, 
+                B = 145, data = timedata, model = "cox|cox")
+summary(model1.cox)
+#********************test for reGeg regression below****************************
+#Cox regression 1
 set.seed(11022021)
 datCox = simGSC(200, summary = TRUE)
+fit.cox = reReg(Recur(t.start %to% t.stop, id, event, status) ~ x1 + x2, 
+                 B = 200, data = datCox, model = "cox|cox")
+summary(fit.cox)
+plot(fit.cox)
 
+#Joint accelerated mean model of Xu
+par0 = list(alpha = c(1, 1), beta = c(1, 1), eta = -c(1, 1), theta = -c(1, 1))
+datam = simGSC(200, par = par0, summary = TRUE)
+fit.am = reReg(Recur(t.start %to% t.stop, id, event, status) ~ x1 + x2, 
+               B = 200, data = datam, model = "am|am")
+summary(fit.am)
+plot(fit.am)
 
+#Joint Cox/accelerated rate model
+par0 = list(eta = c(1, 1), theta = c(0, 0))
+datCoxAr = simGSC(200, par = par0, summary = TRUE)
+fit.CoxAr = reReg(Recur(t.start %to% t.stop, id, event, status) ~ x1 + x2,
+                  B = 200, data = datCoxAr, model = "cox|ar")
+summary(fit.CoxAr)
+plot(fit.CoxAr)
+
+#*****************************************************************
 
 #Andersen-Gill (AG) Marginal means and rates model:
 model.1 = coxph(Surv(tstart,tstop,status) ~ Age + ttlmp + avgmp + cluster(playername), method="breslow", data = timedata)
