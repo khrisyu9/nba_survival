@@ -241,20 +241,56 @@ for (i in 1:nrow(timedata2)){
   }
 }
 
+timedata2$row_num = seq.int(nrow(timedata2))
+
 library(data.table)
 timedata3 = data.table(timedata2, key="playername")
 timedata4 = timedata3[, .SD[which.max(tstop), ], by="playername"]
-timedata4$event2 = 0
-timedata4$status2 = 1
 
-timedata5 = rbind(timedata3, timedata4)
+timedata2$event2[which(timedata2$row_num %in% timedata4$row_num)] = 0
+timedata2$status2[which(timedata2$row_num %in% timedata4$row_num)] = 1
+
+for (i in 1:nrow(timedata2)){
+  if (timedata2$tstop[i] == 82){
+    timedata2$event2[i] = 0
+    if (timedata2$status[i] == 1){
+      timedata2$status2[i] = 1
+    }
+    else {
+      timedata2$status2[i] = 0
+    }
+  }
+}
 
 
+timedata2 = na.omit(timedata2)
 
-model1.cox = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ ttlmp + avgmp + Age, 
+timedata2$avgmp2 = timedata2$avgmp/sd(timedata2$avgmp)
+
+timedata2$Age2 = timedata2$Age/sd(timedata2$Age)
+
+#Model 1: Cox Regression
+model1.cox = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ avgmp2 + Age2, 
                 B = 145, data = timedata2, model = "cox|cox")
 summary(model1.cox)
+plot(model1.cox)
 
+#Model 2: Joint accelerated mean model
+model2.am = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ ttlmp + Age, 
+               B = 145, data = timedata2, model = "am|am")
+summary(model2.am)
+plot(model2.am)
+
+#Model 3: Joint Cox/accelerated rate model
+model3.CoxAr = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ ttlmp + avgmp + Age,
+                  B = 145, data = timedata2, model = "cox|ar")
+summary(model3.CoxAr)
+plot(model3.CoxAr)
+
+# terminal events
+# non-time dependent covariate (age, weight, etc.)
+# gap time model for recurrent events
+# differences between positions
 
 #********************test for reGeg regression below****************************
 #Cox regression (baseline)
@@ -284,7 +320,7 @@ plot(fit.CoxAr)
 #*****************************************************************
 
 #Andersen-Gill (AG) Marginal means and rates model:
-model.1 = coxph(Surv(tstart,tstop,status) ~ Age + ttlmp + avgmp + cluster(playername), method="breslow", data = timedata)
+model.1 = coxph(Surv(tstart,tstop,status) ~ Age + cluster(playername), method="breslow", data = timedata)
 summary(model.1)
 
 model.1_c = coxph(Surv(tstart,tstop,status) ~ Age + MP + cluster(playername), method="breslow", data = timedata_c)
