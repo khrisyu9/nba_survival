@@ -250,6 +250,58 @@ timedata4 = timedata3[, .SD[which.max(tstop), ], by="playername"]
 timedata2$event2[which(timedata2$row_num %in% timedata4$row_num)] = 0
 timedata2$status2[which(timedata2$row_num %in% timedata4$row_num)] = 1
 
+#11/23/2021
+#don't consider terminal event 
+#only treat players with 82 games as censored
+#add covariates: heights, weights, playing time, game played last season, etc.
+#12/17/2021
+#add one more indicator: if games is the second back-to-back game
+#and the event that only missing one game
+#write down the model on paper 
+#Analysis of Episodic Data with Application to Recurrent Pulmonary Exacerbations in
+#Cystic Fibrosis Patients
+
+for (i in 1:nrow(timedata2)){
+  if (timedata2$tstop[i] == 82){
+    timedata2$event2[i] = 0
+    #if (timedata2$status[i] == 1){
+    timedata2$status2[i] = 1
+    #}
+    #else {
+    #  timedata2$status2[i] = 0
+    #}
+  }
+}
+
+
+timedata2 = na.omit(timedata2)
+
+timedata2$avgmp2 = timedata2$avgmp/sd(timedata2$avgmp)
+
+timedata2$Age2 = timedata2$Age/sd(timedata2$Age) 
+
+#Model 1: Cox Regression
+model1.cox = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ avgmp2 + Age2, 
+                B = 145, data = timedata2, model = "cox|cox")
+summary(model1.cox)
+plot(model1.cox)
+
+
+##differences between positions
+####C####
+mean(timedata_c$status)
+
+#nonparametric estimation function by position
+#Poisson process regression
+#recurrent event data regression
+#Cook and Lawless
+#proportional means and rates model
+length(unique(timedata_c$playername))
+
+timedata2 = timedata_c
+timedata2$status2 = timedata2$status
+timedata2$event2 = timedata2$event
+
 for (i in 1:nrow(timedata2)){
   if (timedata2$tstop[i] == 82){
     timedata2$event2[i] = 0
@@ -260,6 +312,31 @@ for (i in 1:nrow(timedata2)){
       timedata2$status2[i] = 0
     }
   }
+  else if (timedata2$tstop[i] != 82){
+    timedata2$status2[i] = 0
+    timedata2$event2[i] = 1    
+  }
+}
+
+timedata2$row_num = seq.int(nrow(timedata2))
+
+library(data.table)
+timedata3 = data.table(timedata2, key="playername")
+timedata4 = timedata3[, .SD[which.max(tstop), ], by="playername"]
+
+timedata2$event2[which(timedata2$row_num %in% timedata4$row_num)] = 0
+timedata2$status2[which(timedata2$row_num %in% timedata4$row_num)] = 1
+
+for (i in 1:nrow(timedata2)){
+  if (timedata2$tstop[i] == 82){
+    timedata2$event2[i] = 0
+    #if (timedata2$status[i] == 1){
+    timedata2$status2[i] = 1
+    #}
+    #else {
+    #  timedata2$status2[i] = 0
+    #}
+  }
 }
 
 
@@ -267,16 +344,147 @@ timedata2 = na.omit(timedata2)
 
 timedata2$avgmp2 = timedata2$avgmp/sd(timedata2$avgmp)
 
-timedata2$Age2 = timedata2$Age/sd(timedata2$Age)
+timedata2$Age2 = timedata2$Age/sd(timedata2$Age) 
 
 #Model 1: Cox Regression
-model1.cox = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ avgmp2 + Age2, 
-                B = 145, data = timedata2, model = "cox|cox")
-summary(model1.cox)
-plot(model1.cox)
+model1.cox.c = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ avgmp2 + Age2, 
+                   B = 23, data = timedata2, model = "cox|cox")
+summary(model1.cox.c)
+plot(model1.cox.c)
+
+####PG####
+mean(timedata_pg$status)
+
+#nonparametric estimation function by position
+#Poisson process regression
+#recurrent event data regression
+#Cook and Lawless
+#proportional means and rates model
+length(unique(timedata_pg$playername))
+
+timedata2 = timedata_pg
+timedata2$status2 = timedata2$status
+timedata2$event2 = timedata2$event
+
+for (i in 1:nrow(timedata2)){
+  if (timedata2$tstop[i] == 82){
+    timedata2$event2[i] = 0
+    if (timedata2$status[i] == 1){
+      timedata2$status2[i] = 1
+    }
+    else {
+      timedata2$status2[i] = 0
+    }
+  }
+  else if (timedata2$tstop[i] != 82){
+    timedata2$status2[i] = 0
+    timedata2$event2[i] = 1    
+  }
+}
+
+timedata2$row_num = seq.int(nrow(timedata2))
+
+library(data.table)
+timedata3 = data.table(timedata2, key="playername")
+timedata4 = timedata3[, .SD[which.max(tstop), ], by="playername"]
+
+timedata2$event2[which(timedata2$row_num %in% timedata4$row_num)] = 0
+timedata2$status2[which(timedata2$row_num %in% timedata4$row_num)] = 1
+
+for (i in 1:nrow(timedata2)){
+  if (timedata2$tstop[i] == 82){
+    timedata2$event2[i] = 0
+    #if (timedata2$status[i] == 1){
+    timedata2$status2[i] = 1
+    #}
+    #else {
+    #  timedata2$status2[i] = 0
+    #}
+  }
+}
+
+
+timedata2 = na.omit(timedata2)
+
+timedata2$avgmp2 = timedata2$avgmp/sd(timedata2$avgmp)
+
+timedata2$Age2 = timedata2$Age/sd(timedata2$Age) 
+
+#Model 1: Cox Regression
+model1.cox.pg = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ avgmp2 + Age2, 
+                      B = 34, data = timedata2, model = "cox|cox")
+summary(model1.cox.pg)
+plot(model1.cox.pg)
+
+####SF####
+mean(timedata_sf$status)
+
+#nonparametric estimation function by position
+#Poisson process regression
+#recurrent event data regression
+#Cook and Lawless
+#proportional means and rates model
+length(unique(timedata_sf$playername))
+
+timedata2 = timedata_sf
+timedata2$status2 = timedata2$status
+timedata2$event2 = timedata2$event
+
+for (i in 1:nrow(timedata2)){
+  if (timedata2$tstop[i] == 82){
+    timedata2$event2[i] = 0
+    if (timedata2$status[i] == 1){
+      timedata2$status2[i] = 1
+    }
+    else {
+      timedata2$status2[i] = 0
+    }
+  }
+  else if (timedata2$tstop[i] != 82){
+    timedata2$status2[i] = 0
+    timedata2$event2[i] = 1    
+  }
+}
+
+timedata2$row_num = seq.int(nrow(timedata2))
+
+library(data.table)
+timedata3 = data.table(timedata2, key="playername")
+timedata4 = timedata3[, .SD[which.max(tstop), ], by="playername"]
+
+timedata2$event2[which(timedata2$row_num %in% timedata4$row_num)] = 0
+timedata2$status2[which(timedata2$row_num %in% timedata4$row_num)] = 1
+
+for (i in 1:nrow(timedata2)){
+  if (timedata2$tstop[i] == 82){
+    timedata2$event2[i] = 0
+    #if (timedata2$status[i] == 1){
+    timedata2$status2[i] = 1
+    #}
+    #else {
+    #  timedata2$status2[i] = 0
+    #}
+  }
+}
+
+
+timedata2 = na.omit(timedata2)
+
+timedata2$avgmp2 = timedata2$avgmp/sd(timedata2$avgmp)
+
+timedata2$Age2 = timedata2$Age/sd(timedata2$Age) 
+
+#Model 1: Cox Regression
+model1.cox.sf = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ avgmp2 + Age2, 
+                     B = 23, data = timedata2, model = "cox|cox")
+summary(model1.cox.sf)
+plot(model1.cox.sf)
+
+#######################################################################################
+
 
 #Model 2: Joint accelerated mean model
-model2.am = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ ttlmp + Age, 
+model2.am = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ avgmp2 + Age2, 
                B = 145, data = timedata2, model = "am|am")
 summary(model2.am)
 plot(model2.am)
