@@ -29,3 +29,20 @@ schedule$HomeABBR <- "NA"
 schedule_new <- read.csv(file = "schedule.csv")
 schedule_new$Date1 <- as.Date(schedule_new$Date, "%a, %b %d, %Y")
 
+#calculate time difference by teams
+#ATL
+ATL_schedule <- schedule_new %>% filter(VisitorABBR == "ATL" | HomeABBR == "ATL")
+ATL_schedule$timediff <- 0
+
+for (i in 2:82){
+  ATL_schedule$timediff[i] <- julian(ATL_schedule$Date1[i], ATL_schedule$Date1[i-1])
+}
+
+#BOS
+BOS_schedule <- schedule_new %>% filter(VisitorABBR == "BOS" | HomeABBR == "BOS")
+BOS_schedule$timediff <- 0
+
+for (i in 2:82){
+  BOS_schedule$timediff[i] <- julian(BOS_schedule$Date1[i], BOS_schedule$Date1[i-1])
+}
+
