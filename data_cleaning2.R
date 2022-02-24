@@ -46,16 +46,23 @@ gamedate <- gamedate[-1,]
 
 nbastats <- read.csv(file = "E:/Bayes_copula/data/2018-2019gamedata/nbastats2019.csv", na.strings=c(""," ","NA"))
 
+nbastats2 <- read.csv(file = "E:/Bayes_copula/data/nbastats2018-2019info.csv", na.strings=c(""," ","NA"))
+
 nbastats$playername <- gsub(" ", "_", nbastats$Player)
+nbastats2$playername <- gsub(" ", "_", nbastats2$Name)
+
+nbastats3 <- nbastats2[c(28,2,3)]
 
 combo <- merge(x = timeplayed, y = nbastats, by = "playername", all.x = TRUE)
 
+combo1.5 <- merge(x = combo, y = nbastats3, by = "playername", all.x = TRUE)
+
 #only consider 6 players with highest minutes each team
-combo2 <- combo %>% filter(MP>25, na.rm = TRUE)
+combo2 <- combo1.5 %>% filter(MP>25, na.rm = TRUE)
 
 combo3 <- combo2[!duplicated(combo2$playername),]
 
-covmatrix <- combo3[,c(1,85:90)]
+covmatrix <- combo3[,c(1,113,114,85:90)]
 
 combo4 <- combo3[,2:83]
 
@@ -135,17 +142,56 @@ for (i in 1:ncol(combo8)){
 
 # group survival model
 
-#prepare the time matrix
-
 combo9 <- cbind(covmatrix, combo9)
+
+#prepare the time matrix by game
+playername <- "ABC"
+gamenumber <- 0
+timeplayed <- 0
+cumulativegameplayed <- 0
+cumulativegamemissed <- 0
+consecutivegameplayed <- 0
+consecutivegamemissed <- 0
+
+timematrixbygame <- data.frame(playername, gamenumber, timeplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed)
+
+for (i in 1:nrow(combo9)){
+  gamenumber <- 0
+  timeplayed <- 0
+  cumulativegameplayed <- 0
+  cumulativegamemissed <- 0
+  consecutivegameplayed <- 0
+  consecutivegamemissed <- 0
+  playername <- combo9[i,1]
+  for (j in 10:ncol(combo9)){
+    gamenumber <- j-9
+    timeplayed <- combo9[i,j]
+    if (timeplayed != 0){
+      cumulativegameplayed <- cumulativegameplayed + 1
+      consecutivegameplayed <- consecutivegameplayed + 1
+      consecutivegamemissed <- 0
+    }
+    if (timeplayed == 0){
+      cumulativegamemissed <- cumulativegamemissed + 1
+      consecutivegamemissed <- consecutivegamemissed + 1
+      consecutivegameplayed <- 0      
+    }
+    timematrixbygame <- rbind(timematrixbygame,c(playername, gamenumber, timeplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed))
+  }
+}
+
+
+#prepare the time matrix
 
 playername <- "ABC"
 tstart <- 0
 tstop <- 0
 status <- 0
+
 event <- 0
 ttlmp <- 0
 avgmp <- 0
+
 
 timematrix <- data.frame(playername, tstart, tstop, status, event, ttlmp, avgmp)
 
@@ -191,6 +237,7 @@ timematrix1 <- timematrix1[-1,]
 timematrix2 <- timematrix1
 
 timematrix2$tstart <- as.numeric(timematrix2$tstart)
+
 timematrix2$tstop <- as.numeric(timematrix2$tstop)
 timematrix2$status <- as.numeric(timematrix2$status)
 timematrix2$event <- as.numeric(timematrix2$event)
@@ -277,14 +324,20 @@ for (i in 1:nrow(timedata2)){
 timedata2 = na.omit(timedata2)
 
 timedata2$avgmp2 = timedata2$avgmp/sd(timedata2$avgmp)
-
 timedata2$Age2 = timedata2$Age/sd(timedata2$Age) 
+timedata2$Height2 = timedata2$Height/sd(timedata2$Height) 
+timedata2$Weight2 = timedata2$Weight/sd(timedata2$Weight)
+
+timedata2$injuryindicater = 
+
 
 #Model 1: Cox Regression
-model1.cox = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ avgmp2 + Age2, 
+model1.cox = reReg(Recur(tstart %to% tstop, playername, event2, status2) ~ avgmp2 + Age2 + Height2 + Weight2, 
                 B = 145, data = timedata2, model = "cox|cox")
 summary(model1.cox)
 plot(model1.cox)
+
+# record home/away games win shares and basic statistics
 
 
 ##differences between positions
@@ -426,7 +479,7 @@ mean(timedata_sf$status)
 #proportional means and rates model
 length(unique(timedata_sf$playername))
 
-timedata2 = timedata_sf
+timedata2 = timedata
 timedata2$status2 = timedata2$status
 timedata2$event2 = timedata2$event
 
