@@ -153,40 +153,42 @@ cumulativegamemissed <- 0
 consecutivegameplayed <- 0
 consecutivegamemissed <- 0
 injurytime <- 0
-totaltimeplayed <- 0
-consecutivetimeplayed <- 0
+cumulativeminutesplayed <- 0
+consecutiveminutesplayed <- 0
 
-timematrixbygame <- data.frame(playername, gamenumber, timeplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed, injurytime, totaltimeplayed, consecutivetimeplayed)
+timematrixbygame <- data.frame(playername, gamenumber, minutesplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed, injurytime, cumulativeminutesplayed, consecutiveminutesplayed)
 
 for (i in 1:nrow(combo9)){
   gamenumber <- 0
-  timeplayed <- 0
+  minutesplayed <- 0
   cumulativegameplayed <- 0
   cumulativegamemissed <- 0
   consecutivegameplayed <- 0
   consecutivegamemissed <- 0
   injurytime <- 0
-  totaltimeplayed <- 0
-  consecutivetimeplayed <- 0
+  cumulativeminutesplayed <- 0
+  consecutiveminutesplayed <- 0
   playername <- combo9[i,1]
   for (j in 10:ncol(combo9)){
     gamenumber <- j-9
-    timeplayed <- combo9[i,j]
-    if (timeplayed != 0){
+    minutesplayed <- combo9[i,j]
+    cumulativeminutesplayed <- cumulativeminutesplayed + minutesplayed
+    if (minutesplayed != 0){
       cumulativegameplayed <- cumulativegameplayed + 1
       consecutivegameplayed <- consecutivegameplayed + 1
       consecutivegamemissed <- 0
+      consecutiveminutesplayed <- consecutiveminutesplayed + minutesplayed
     }
-    if (timeplayed == 0){
+    if (minutesplayed == 0){
       cumulativegamemissed <- cumulativegamemissed + 1
       consecutivegamemissed <- consecutivegamemissed + 1
       consecutivegameplayed <- 0
+      consecutiveminutesplayed <- 0
       if (consecutivegamemissed == 1){
         injurytime <- injurytime + 1
       }
-      
     }
-    timematrixbygame <- rbind(timematrixbygame,c(playername, gamenumber, timeplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed, injurytime))
+    timematrixbygame <- rbind(timematrixbygame,c(playername, gamenumber, minutesplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed, injurytime, cumulativeminutesplayed, consecutiveminutesplayed))
   }
 }
 
