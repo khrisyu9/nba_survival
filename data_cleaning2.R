@@ -192,6 +192,13 @@ for (i in 1:nrow(combo9)){
   }
 }
 
+timematrixbygame <- timematrixbygame[-1,]
+
+databygame <- merge(x = timematrixbygame, y = covmatrix, by = "playername", all.x = TRUE)
+
+output <- glm(injurytime ~ cumulativegameplayed + cumulativeminutesplayed + consecutivegameplayed + consecutiveminutesplayed, data = databygame,
+             family = poisson)
+print(summary(output))
 
 #prepare the time matrix
 
