@@ -9,6 +9,9 @@ library(stringr)
 library(factoextra)
 library(reReg)
 library(Rcpp)
+library(pglm)
+library(lmtest)
+library(MASS)
 
 # read and filter players with enough game attendance and minutes
 #read all .csv documents
