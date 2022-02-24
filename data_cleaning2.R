@@ -152,8 +152,11 @@ cumulativegameplayed <- 0
 cumulativegamemissed <- 0
 consecutivegameplayed <- 0
 consecutivegamemissed <- 0
+injurytime <- 0
+totaltimeplayed <- 0
+consecutivetimeplayed <- 0
 
-timematrixbygame <- data.frame(playername, gamenumber, timeplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed)
+timematrixbygame <- data.frame(playername, gamenumber, timeplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed, injurytime, totaltimeplayed, consecutivetimeplayed)
 
 for (i in 1:nrow(combo9)){
   gamenumber <- 0
@@ -162,6 +165,9 @@ for (i in 1:nrow(combo9)){
   cumulativegamemissed <- 0
   consecutivegameplayed <- 0
   consecutivegamemissed <- 0
+  injurytime <- 0
+  totaltimeplayed <- 0
+  consecutivetimeplayed <- 0
   playername <- combo9[i,1]
   for (j in 10:ncol(combo9)){
     gamenumber <- j-9
@@ -174,9 +180,13 @@ for (i in 1:nrow(combo9)){
     if (timeplayed == 0){
       cumulativegamemissed <- cumulativegamemissed + 1
       consecutivegamemissed <- consecutivegamemissed + 1
-      consecutivegameplayed <- 0      
+      consecutivegameplayed <- 0
+      if (consecutivegamemissed == 1){
+        injurytime <- injurytime + 1
+      }
+      
     }
-    timematrixbygame <- rbind(timematrixbygame,c(playername, gamenumber, timeplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed))
+    timematrixbygame <- rbind(timematrixbygame,c(playername, gamenumber, timeplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed, injurytime))
   }
 }
 
