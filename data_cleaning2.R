@@ -199,9 +199,13 @@ timematrixbygame <- timematrixbygame[-1,]
 
 databygame <- merge(x = timematrixbygame, y = covmatrix, by = "playername", all.x = TRUE)
 
-output <- glm(injurytime ~ cumulativegameplayed + cumulativeminutesplayed + consecutivegameplayed + consecutiveminutesplayed, data = databygame,
-             family = poisson)
-print(summary(output))
+res1 <- pglm(injurytime ~ cumulativegameplayed + cumulativeminutesplayed + consecutivegameplayed + consecutiveminutesplayed + Height + Weight + age, family = poisson, data = databygame, effect = "individual", model="within", index = "playername")
+summary(res1)
+
+
+##output <- glm(injurytime ~ cumulativegameplayed + cumulativeminutesplayed + consecutivegameplayed + consecutiveminutesplayed, data = databygame,
+##             family = poisson)
+##print(summary(output))
 
 #prepare the time matrix
 
