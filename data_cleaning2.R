@@ -150,7 +150,7 @@ combo9 <- cbind(covmatrix, combo9)
 #prepare the time matrix by game
 playername <- "ABC"
 gamenumber <- 0
-timeplayed <- 0
+minutesplayed <- 0
 cumulativegameplayed <- 0
 cumulativegamemissed <- 0
 consecutivegameplayed <- 0
@@ -199,9 +199,43 @@ timematrixbygame <- timematrixbygame[-1,]
 
 databygame <- merge(x = timematrixbygame, y = covmatrix, by = "playername", all.x = TRUE)
 
+databygame$gamenumber <- as.numeric(databygame$gamenumber)
+databygame$minutesplayed <- as.numeric(databygame$minutesplayed)
+databygame$cumulativegameplayed <- as.numeric(databygame$cumulativegameplayed)
+databygame$cumulativegamemissed <- as.numeric(databygame$cumulativegamemissed)
+databygame$consecutivegameplayed <- as.numeric(databygame$consecutivegameplayed)
+databygame$consecutivegamemissed <- as.numeric(databygame$consecutivegamemissed)
+databygame$injurytime <- as.numeric(databygame$injurytime)
+databygame$cumulativeminutesplayed <- as.numeric(databygame$cumulativeminutesplayed)
+databygame$consecutiveminutesplayed <- as.numeric(databygame$consecutiveminutesplayed)
+databygame$minutesplayed <- as.numeric(databygame$minutesplayed)
+databygame$Height <- as.numeric(databygame$Height)
+databygame$Weight <- as.numeric(databygame$Weight)
+databygame$Age <- as.numeric(databygame$Age)
+databygame$cumulativeMP <- as.numeric(databygame$cumulativeminutesplayed/databygame$cumulativegameplayed)
+databygame$consecutiveMP <- as.numeric(databygame$consecutiveminutesplayed/databygame$consecutivegameplayed)
+databygame$consecutiveMP[is.nan(databygame$consecutiveMP)] <- 0
+
+#check one game rest interval 02/24/2024
+sum(databygame$consecutivegamemissed > 2)
+sum(databygame$consecutivegamemissed == 1)
+#zero inflated poisson
+
+#optim() function to estimate local minimum
+#home/away indicator
+#whether the second game of back-to-back games
+
+function(){
+  
+}
+
+
+
 res1 <- pglm(injurytime ~ cumulativegameplayed + cumulativeminutesplayed + consecutivegameplayed + consecutiveminutesplayed + Height + Weight + age, family = poisson, data = databygame, effect = "individual", model="within", index = "playername")
 summary(res1)
 
+
+#logistic regression
 
 ##output <- glm(injurytime ~ cumulativegameplayed + cumulativeminutesplayed + consecutivegameplayed + consecutiveminutesplayed, data = databygame,
 ##             family = poisson)
