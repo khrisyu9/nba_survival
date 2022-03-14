@@ -158,8 +158,9 @@ consecutivegamemissed <- 0
 injurytime <- 0
 cumulativeminutesplayed <- 0
 consecutiveminutesplayed <- 0
+onegamerest <- 0
 
-timematrixbygame <- data.frame(playername, gamenumber, minutesplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed, injurytime, cumulativeminutesplayed, consecutiveminutesplayed)
+timematrixbygame <- data.frame(playername, gamenumber, minutesplayed, cumulativegameplayed, cumulativegamemissed, consecutivegameplayed, consecutivegamemissed, injurytime, cumulativeminutesplayed, consecutiveminutesplayed, onegamerest)
 
 for (i in 1:nrow(combo9)){
   gamenumber <- 0
@@ -171,6 +172,7 @@ for (i in 1:nrow(combo9)){
   injurytime <- 0
   cumulativeminutesplayed <- 0
   consecutiveminutesplayed <- 0
+  onegamerest <- 0
   playername <- combo9[i,1]
   for (j in 10:ncol(combo9)){
     gamenumber <- j-9
@@ -217,6 +219,7 @@ databygame$consecutiveMP <- as.numeric(databygame$consecutiveminutesplayed/datab
 databygame$consecutiveMP[is.nan(databygame$consecutiveMP)] <- 0
 
 #check one game rest interval 02/24/2024
+
 sum(databygame$consecutivegamemissed > 2)
 sum(databygame$consecutivegamemissed == 1)
 #zero inflated poisson
