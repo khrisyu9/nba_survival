@@ -256,6 +256,8 @@ for (i in 1:nrow(databygame1)){
   }
 }
 
+
+
 ##optim() algorithm
 
 
@@ -435,7 +437,6 @@ timedata2$Age2 = timedata2$Age/sd(timedata2$Age)
 timedata2$Height2 = timedata2$Height/sd(timedata2$Height) 
 timedata2$Weight2 = timedata2$Weight/sd(timedata2$Weight)
 
-timedata2$injuryindicater = 
 
 
 #Model 1: Cox Regression
