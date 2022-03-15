@@ -970,8 +970,21 @@ teamschedule <- rbind(teamschedule, WAS[c(11,14,15,16)])
 
 #write.csv(teamschedule, file = "E:/Bayes_copula/data/2018-2019gamedata/processedteamschedule.csv")
 
+databygame1 <- merge(databygame, teamschedule, by=c("Tm","gamenumber"), all.x = T)
 
+databygame1 <- databygame1[order(databygame1$playername),]
 
+summary(teamschedule$gamegap)
+
+#drop those players played for multiple teams
+databygame1 <- filter(databygame1, !is.na(gamegap))
+
+for (i in 1:nrow(databygame1)){
+  databygame1$secondbacktoback[i] <- 0
+  if (databygame1$gamegap[i] == 1){
+    databygame1$secondbacktoback[i] <- 1
+  }
+}
 
 #check one game rest interval 02/24/2024
 
