@@ -256,6 +256,8 @@ for (i in 1:nrow(databygame1)){
   }
 }
 
+write.csv(databygame1, file = "E:/Bayes_copula/data/playermatrixbygame_1819.csv")
+
 
 
 ##optim() algorithm
