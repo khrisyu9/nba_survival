@@ -275,13 +275,16 @@ sum(databygame$consecutivegamemissed == 1)
 #home/away indicator (done)
 #whether the second game of back-to-back games (done)
 
-function(){
-  
+likelihood_fun <- function(X, Y){
+  lambda <- rep(0,length(X))
+  for (i in 1:length(X)){
+    lambda[i] <- exp(X[i])/Y[i]   
+  }
+  likelihood <- prod(lambda)/sum(lambda)
 }
 
-optim_output <- optim(par = c(0, 1),    # Applying optim
-                      fn = likelihood_function,
-                      data = data)
+optim_output <- optim(fn = likelihood_fun,
+                      X = )
 
 
 
