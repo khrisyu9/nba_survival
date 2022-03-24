@@ -259,7 +259,6 @@ for (i in 1:nrow(databygame1)){
 write.csv(databygame1, file = "E:/Bayes_copula/data/playermatrixbygame_1819.csv")
 
 
-
 ##optim() algorithm
 
 
@@ -279,6 +278,12 @@ sum(databygame$consecutivegamemissed == 1)
 function(){
   
 }
+
+optim_output <- optim(par = c(0, 1),    # Applying optim
+                      fn = likelihood_function,
+                      data = data)
+
+
 
 
 
