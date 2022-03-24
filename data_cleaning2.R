@@ -284,7 +284,8 @@ likelihood_fun <- function(X, Y){
 }
 
 optim_output <- optim(fn = likelihood_fun,
-                      X = )
+                      X = databygame1[c(12:14, 16)],
+                      Y = databygame1[6])
 
 
 
