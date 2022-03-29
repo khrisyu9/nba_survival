@@ -275,20 +275,30 @@ sum(databygame$consecutivegamemissed == 1)
 #home/away indicator (done)
 #whether the second game of back-to-back games (done)
 
-likelihood_fun <- function(X, Y){
+likelihood_fun <- function(X, Y, beta){
   lambda <- rep(0,length(X))
   for (i in 1:length(X)){
     lambda[i] <- exp(X[i])/Y[i]   
   }
-  likelihood <- prod(lambda)/sum(lambda)
+  likelihood <- prod(lambda)/sum(exp(lambda))
+  return(likelihood)
 }
 
-optim_output <- optim(fn = likelihood_fun,
+
+optim_output <- optim(par = c(0, 1),
+                      fn = likelihood_fun,
                       X = databygame1[c(12:14, 16)],
                       Y = databygame1[6])
 
 
+#log-likelihood function for poisson
+log.lklh.poisson <- function(x, lambda){ 
+  -sum(x * log(lambda) - log(factorial(x)) - lambda) 
+}
 
+Xt <- databygame1[c(12:14, 16)]
+
+optim(par = rep(1,4), log.lklh.poisson, x = Xt)
 
 
 res1 <- pglm(injurytime ~ cumulativegameplayed + cumulativeminutesplayed + consecutivegameplayed + consecutiveminutesplayed + Height + Weight + age, family = poisson, data = databygame, effect = "individual", model="within", index = "playername")
