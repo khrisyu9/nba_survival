@@ -261,52 +261,80 @@ for (i in 1:nrow(databygame1)){
 #write.csv(databygame1, file = "E:/Bayes_copula/data/playermatrixbygame_1819.csv")
 
 
-##optim() algorithm
+##optim() algorithm variables proprocessing below
+databygame2 <- databygame1
 
 ###covariates below
 ##minutesplayed
-x1_long <- databygame1[c(2,3,4)]
-x1 <- spread(x1_long, playername, minutesplayed)
+databygame2$minutesplayed <- scale(databygame2$minutesplayed)
+x1_long <- databygame2[c(2,3,4)]
+x1_wide <- spread(x1_long, playername, minutesplayed)
+any(is.na(x1_wide))
+x1 <- x1_wide[-1]
 any(is.na(x1))
 
 ##onegamerest
-x2_long <- databygame1[c(2,3,12)]
-x2 <- spread(x2_long, playername, onegamerest)
+databygame2$onegamerest <- scale(databygame2$onegamerest)
+x2_long <- databygame2[c(2,3,12)]
+x2_wide <- spread(x2_long, playername, onegamerest)
+any(is.na(x2_wide))
+x2 <- x2_wide[-1]
 any(is.na(x2))
 
 ##Height
-x3_long <- databygame1[c(2,3,13)]
-x3 <- spread(x3_long, playername, Height)
+databygame2$Height <- scale(databygame2$Height)
+x3_long <- databygame2[c(2,3,13)]
+x3_wide <- spread(x3_long, playername, Height)
+any(is.na(x3_wide))
+x3 <- x3_wide[-1]
 any(is.na(x3))
 
 ##Weight
-x4_long <- databygame1[c(2,3,14)]
-x4 <- spread(x4_long, playername, Weight)
+databygame2$Weight <- scale(databygame2$Weight)
+x4_long <- databygame2[c(2,3,14)]
+x4_wide <- spread(x4_long, playername, Weight)
+any(is.na(x4_wide))
+x4 <- x4_wide[-1]
 any(is.na(x4))
 
 ##Age
-x5_long <- databygame1[c(2,3,16)]
-x5 <- spread(x5_long, playername, Age)
+databygame2$Age <- scale(databygame2$Age)
+x5_long <- databygame2[c(2,3,16)]
+x5_wide <- spread(x5_long, playername, Age)
+any(is.na(x5_wide))
+x5 <- x5_wide[-1]
 any(is.na(x5))
 
 ##consecutiveMP
-x6_long <- databygame1[c(2,3,21)]
-x6 <- spread(x6_long, playername, consecutiveMP)
+databygame2$consecutiveMP <- scale(databygame2$consecutiveMP)
+x6_long <- databygame2[c(2,3,21)]
+x6_wide <- spread(x6_long, playername, consecutiveMP)
+any(is.na(x6_wide))
+x6 <- x6_wide[-1]
 any(is.na(x6))
 
 ##gamegap
-x7_long <- databygame1[c(2,3,22)]
-x7 <- spread(x7_long, playername, gamegap)
+databygame2$gamegap <- scale(databygame2$gamegap)
+x7_long <- databygame2[c(2,3,22)]
+x7_wide <- spread(x7_long, playername, gamegap)
+any(is.na(x7_wide))
+x7 <- x7_wide[-1]
 any(is.na(x7))
 
 ##homegame
-x8_long <- databygame1[c(2,3,23)]
-x8 <- spread(x8_long, playername, homegame)
+databygame2$homegame <- scale(databygame2$gamegap)
+x8_long <- databygame2[c(2,3,23)]
+x8_wide <- spread(x8_long, playername, homegame)
+any(is.na(x8_wide))
+x8 <- x8_wide[-1]
 any(is.na(x8))
 
 ##secondbacktoback
-x9_long <- databygame1[c(2,3,24)]
-x9 <- spread(x9_long, playername, secondbacktoback)
+databygame2$secondbacktoback <- scale(databygame2$secondbacktoback)
+x9_long <- databygame2[c(2,3,24)]
+x9_wide <- spread(x9_long, playername, secondbacktoback)
+any(is.na(x9_wide))
+x9 <- x9_wide[-1]
 any(is.na(x9))
 
 ##injurygame
@@ -335,16 +363,6 @@ y_list <- as.list(y_injury[2:ncol(y_injury)])
 
 y_injury <- y_injury[-1]
 
-x1 <- x1[-1]
-x2 <- x2[-1]
-x3 <- x3[-1]
-x4 <- x4[-1]
-x5 <- x5[-1]
-x6 <- x6[-1]
-x7 <- x7[-1]
-x8 <- x8[-1]
-x9 <- x9[-1]
-#y_list[[1]][10]
 
 likelihood <- function(beta){
   lambda_D <- matrix(0,82,ncol(y_injury))
@@ -362,7 +380,7 @@ likelihood <- function(beta){
   return(ll_m - s_ll)
 }
 
-opt_out <- optim(par = rep(0,9), fn = likelihood, method = "BFGS")
+opt_out <- optim(par = rep(1,9), fn = likelihood, method = "BFGS")
 ###point process to analyze the injury process
 ###zero-inflated poisson to model recover process (consecutivemissedgames - 1) 
 
