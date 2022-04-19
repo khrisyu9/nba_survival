@@ -337,6 +337,15 @@ any(is.na(x9_wide))
 x9 <- x9_wide[-1]
 any(is.na(x9))
 
+##cumulativegameplayed
+databygame2$cumulativegameplayed <- scale(databygame2$cumulativegameplayed)
+x10_long <- databygame2[c(2,3,5)]
+x10_wide <- spread(x10_long, playername, cumulativegameplayed)
+any(is.na(x10_wide))
+x10 <- x10_wide[-1]
+any(is.na(x10))
+
+
 ##injurygame
 y_long <- databygame1[c(2,3,8)]
 y_wide <- spread(y_long, playername, consecutivegamemissed)
@@ -382,19 +391,20 @@ for (j in 2:ncol(z_wide)){
 any(is.na(z_hazard))
 
 z_hazard <- z_hazard[-1]
-
 z_hazard <- -1*z_hazard
 
+ncol(y_injury)
 
+##likelihood function
 likelihood <- function(beta){
   lambda_D <- matrix(0,82,ncol(y_injury))
   lambda <- matrix(0,82,ncol(y_injury))
   for (j in 1:ncol(y_injury)){
     for (i in 1:82){
       lambda_D[i,j] <- exp(beta[1]*x1[i,j]+beta[2]*x2[i,j]+beta[3]*x3[i,j]+beta[4]*x4[i,j]+beta[5]*x5[i,j]
-                                    +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j])*z_hazard[i,j]
+                                    +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j]+beta[10]*x10[i,j])*z_hazard[i,j]
       lambda[i,j] <- exp(beta[1]*x1[i,j]+beta[2]*x2[i,j]+beta[3]*x3[i,j]+beta[4]*x4[i,j]+beta[5]*x5[i,j]
-                                  +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j])*y_injury[i,j]
+                                  +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j]+beta[10]*x10[i,j])*y_injury[i,j]
     }
   } 
   s_ll <- sum(lambda_D)
@@ -402,9 +412,11 @@ likelihood <- function(beta){
   return(ll_m - s_ll)
 }
 
-opt_out <- optim(par = rep(1,9), fn = likelihood, method = "BFGS")
-summary(opt_out)
-### add variable: game number for that time
+##optim function, with all starting beta = 1
+opt_out <- optim(par = rep(1,10), fn = likelihood, method = "BFGS")
+##converged betas
+opt_out$par
+### add variable: game number for that time (check)
 ### use spline to create basis (0-82 games)
 ### zero-inflated poisson likelihood to model injury number of games (injury games -1 ~ zero-inflated poisson)
 ### nimble R package to implement (check)
