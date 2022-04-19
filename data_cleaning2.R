@@ -363,6 +363,28 @@ y_list <- as.list(y_injury[2:ncol(y_injury)])
 
 y_injury <- y_injury[-1]
 
+##hazard game
+z_long <- databygame1[c(2,3,8)]
+z_wide <- spread(y_long, playername, consecutivegamemissed)
+
+z_hazard <- z_wide
+
+for (j in 2:ncol(z_wide)){
+  for (i in 1:nrow(z_wide)){
+    if (z_wide[i,j]==0){
+      z_hazard[i,j] <- -1
+    }
+    if (z_wide[i,j]>=1){
+      z_hazard[i,j] <- 0
+    } 
+  }
+}
+any(is.na(z_hazard))
+
+z_hazard <- z_hazard[-1]
+
+z_hazard <- -1*z_hazard
+
 
 likelihood <- function(beta){
   lambda_D <- matrix(0,82,ncol(y_injury))
@@ -370,7 +392,7 @@ likelihood <- function(beta){
   for (j in 1:ncol(y_injury)){
     for (i in 1:82){
       lambda_D[i,j] <- exp(beta[1]*x1[i,j]+beta[2]*x2[i,j]+beta[3]*x3[i,j]+beta[4]*x4[i,j]+beta[5]*x5[i,j]
-                                    +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j])
+                                    +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j])*z_hazard[i,j]
       lambda[i,j] <- exp(beta[1]*x1[i,j]+beta[2]*x2[i,j]+beta[3]*x3[i,j]+beta[4]*x4[i,j]+beta[5]*x5[i,j]
                                   +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j])*y_injury[i,j]
     }
@@ -381,6 +403,27 @@ likelihood <- function(beta){
 }
 
 opt_out <- optim(par = rep(1,9), fn = likelihood, method = "BFGS")
+summary(opt_out)
+### add variable: game number for that time
+### use spline to create basis (0-82 games)
+### zero-inflated poisson likelihood to model injury number of games (injury games -1 ~ zero-inflated poisson)
+### nimble R package to implement (check)
+### New England Statistics Symposium (check)
+
+
+
+
+
+
+
+
+
+
+
+
+
+### multi-group log-Gaussian Cox Process
+
 ###point process to analyze the injury process
 ###zero-inflated poisson to model recover process (consecutivemissedgames - 1) 
 
