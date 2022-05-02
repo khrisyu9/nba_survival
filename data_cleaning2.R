@@ -442,36 +442,11 @@ opt_out$par
 
 
 ##test below
-data <- read.csv("E:/Bayes_copula/Survival_analysis/2018-2019gamedata/Sales_Transactions_Dataset_Weekly.csv")
-X<-data%>%
-  dplyr::filter(Product_Code =='P294')%>%
-  as.matrix()
 
 ## 
 ### use spline to create basis (0-82 games) (3-4 knots, create covariates)
 y_rowmean <- rowMeans(y_injury)
 
-# Specify the number of knots
-n.knots<-6
-# Determine position of knots
-x=seq(0,1,length.out=length(y_rowmean))
-knots = seq(0,1,length.out = n.knots-2)
-# Create B Spline Basis
-B = bs(x, knots = knots, degree = 3)[,1:(n.knots)]
-
-# Fit coefficients using Least Squares Estimate
-Bcoef = matrix(0,length(y_rowmean),n.knots)
-for(i in 1:length(y_rowmean))
-{
-  Bcoef[i,] = solve(t(B)%*%B)%*%t(B)%*%as.matrix(y_rowmean[i])
-}
-as.data.frame(Bcoef%*%t(B))%>%
-  gather(key='row',value='Prediction',V1:V52)%>%
-  mutate(week=row_number()-1)%>%
-  inner_join(p.294)%>%
-  gather(key,value,sales,Prediction)%>%
-  ggplot(aes(x=week,y=value,col=key))+geom_line()+
-  labs(title="Approximation of Average Injury of 82 Games Using 6-Knot B-Spline")
 
 ### zero-inflated poisson likelihood to model injury number of games (injury games -1 ~ zero-inflated poisson)
 ### write down the log-likelihood function
@@ -479,12 +454,6 @@ as.data.frame(Bcoef%*%t(B))%>%
 
 ### nimble R package to implement (check) (play around tutorial)
 ### New England Statistics Symposium (check)
-
-
-
-
-
-
 
 
 
