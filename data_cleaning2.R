@@ -345,6 +345,28 @@ any(is.na(x10_wide))
 x10 <- x10_wide[-1]
 any(is.na(x10))
 
+##gamenumberspline
+#3 cutpoints at games 25, 40, 60
+games <- seq(1:82)
+games2 <- rowSums(y_injury)
+games2 <- games*games2
+spline_df <- as.data.frame(cbind(games, games2))
+fit <- lm(games2 ~ bs(games,knots = c(25, 40, 60)), data = spline_df)
+summary(fit)
+predicted <- predict(fit,newdata = data.frame(games))
+#Plotting the Regression Line to the scatter plot   
+plot(games,games2,col="grey",xlab="linear",ylab="games")
+points(games, predicted, col="darkgreen",lwd=2,type="l")
+#adding cutpoints
+abline(v=c(25,40,60),lty=2,col="darkgreen")
+
+databygame2$gamenumberspline <- rep(scale(predicted),140)
+x11_long <- databygame2[c(2,3,25)]
+x11_wide <- spread(x11_long, playername, gamenumberspline)
+any(is.na(x11_wide))
+x11 <- x11_wide[-1]
+any(is.na(x11))
+
 
 ##injurygame
 y_long <- databygame1[c(2,3,8)]
@@ -402,9 +424,9 @@ likelihood <- function(beta){
   for (j in 1:ncol(y_injury)){
     for (i in 1:82){
       lambda_D[i,j] <- exp(beta[1]*x1[i,j]+beta[2]*x2[i,j]+beta[3]*x3[i,j]+beta[4]*x4[i,j]+beta[5]*x5[i,j]
-                                    +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j]+beta[10]*x10[i,j])*z_hazard[i,j]
+                                    +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j]+beta[10]*x10[i,j]+beta[11]*x11[i,j])*z_hazard[i,j]
       lambda[i,j] <- exp(beta[1]*x1[i,j]+beta[2]*x2[i,j]+beta[3]*x3[i,j]+beta[4]*x4[i,j]+beta[5]*x5[i,j]
-                                  +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j]+beta[10]*x10[i,j])*y_injury[i,j]
+                                  +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j]+beta[10]*x10[i,j]+beta[11]*x11[i,j])*y_injury[i,j]
     }
   } 
   s_ll <- sum(lambda_D)
@@ -413,7 +435,7 @@ likelihood <- function(beta){
 }
 
 ##optim function, with all starting beta = 1
-opt_out <- optim(par = rep(1,10), fn = likelihood, method = "BFGS")
+opt_out <- optim(par = rep(1,11), fn = likelihood, method = "BFGS")
 ##converged betas
 opt_out$par
 ### add variable: game number for that time (check)
