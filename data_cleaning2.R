@@ -438,10 +438,13 @@ likelihood <- function(beta){
 opt_out <- optim(par = rep(1,11), fn = likelihood, method = "BFGS")
 ##converged betas
 opt_out$par
+
+## results:
+#[1]  5.6445485 -1.1939356  5.6744417  7.5955558  6.9580485  6.1093977 35.0283946 35.0283946 -0.6692039
+#[10] -4.9490297 -3.1569464
 ### add variable: game number for that time (check)
 
 
-##test below
 
 ## 
 ### use spline to create basis (0-82 games) (3-4 knots, create covariates)
