@@ -345,29 +345,6 @@ any(is.na(x10_wide))
 x10 <- x10_wide[-1]
 any(is.na(x10))
 
-##gamenumberspline
-#3 cutpoints at games 25, 40, 60
-games <- seq(1:82)
-games2 <- rowSums(y_injury)
-games2 <- games*games2
-spline_df <- as.data.frame(cbind(games, games2))
-fit <- lm(games2 ~ bs(games,knots = c(25, 40, 60)), data = spline_df)
-summary(fit)
-predicted <- predict(fit,newdata = data.frame(games))
-#Plotting the Regression Line to the scatter plot   
-plot(games,games2,col="grey",xlab="linear",ylab="games")
-points(games, predicted, col="darkgreen",lwd=2,type="l")
-#adding cutpoints
-abline(v=c(25,40,60),lty=2,col="darkgreen")
-
-databygame2$gamenumberspline <- rep(scale(predicted),140)
-x11_long <- databygame2[c(2,3,25)]
-x11_wide <- spread(x11_long, playername, gamenumberspline)
-any(is.na(x11_wide))
-x11 <- x11_wide[-1]
-any(is.na(x11))
-
-
 ##injurygame
 y_long <- databygame1[c(2,3,8)]
 y_wide <- spread(y_long, playername, consecutivegamemissed)
@@ -393,6 +370,29 @@ any(is.na(y_injury))
 y_list <- as.list(y_injury[2:ncol(y_injury)])
 
 y_injury <- y_injury[-1]
+
+
+##gamenumberspline
+#3 cut-points at games 25, 40, 60
+games <- seq(1:82) #non-linear effects
+games2 <- rowSums(y_injury)
+games2 <- games*games2
+spline_df <- as.data.frame(cbind(games, games2))
+fit <- lm(games2 ~ bs(games,knots = c(25, 40, 60)), data = spline_df)
+summary(fit)
+predicted <- predict(fit,newdata = data.frame(games))
+#Plotting the Regression Line to the scatter plot   
+plot(games,games2,col="grey",xlab="linear",ylab="games")
+points(games, predicted, col="darkgreen",lwd=2,type="l")
+#adding cutpoints
+abline(v=c(25,40,60),lty=2,col="darkgreen")
+
+databygame2$gamenumberspline <- rep(scale(predicted),140)
+x11_long <- databygame2[c(2,3,25)]
+x11_wide <- spread(x11_long, playername, gamenumberspline)
+any(is.na(x11_wide))
+x11 <- x11_wide[-1]
+any(is.na(x11))
 
 ##hazard game
 z_long <- databygame1[c(2,3,8)]
@@ -438,6 +438,37 @@ likelihood <- function(beta){
 opt_out <- optim(par = rep(1,11), fn = likelihood, method = "BFGS")
 ##converged betas
 opt_out$par
+
+## coefficient results:
+#minutesplayed 5.6445485 
+#onegamerest -1.1939356  
+#height 5.6744417  
+#weight 7.5955558  
+#age 6.9580485  
+#consecutiveMP 6.1093977 
+#gamegap 35.0283946 
+#homegame 35.0283946 
+#secondbacktoback -0.6692039
+#cumulativegameplayed -4.9490297 
+#gamenumberspline -3.1569464
+
+##EDA: only rest for one game proportion, etc.
+#one game rest proportion:
+playersummary <- filter(databygame1, gamenumber == 82)
+playersummary$ogr_prop <- playersummary$onegamerest/playersummary$injurytime
+
+library(ggrepel)
+
+ggplot(playersummary, aes(injurytime, ogr_prop, label = playername)) +    # ggplot2 with some labels
+  geom_point(color = "dodgerblue", size = 2) +
+  geom_text_repel(aes(label = ifelse(ogr_prop >= 0.6 & ogr_prop < 1 & injurytime >= 8, playername, "")), color = "orange")
+
+
+
+##ZIP coefficients
+##inflated proportion?
+##all players share the same inflated pi 
+##model the period of games injured
 
 ## results:
 #[1]  5.6445485 -1.1939356  5.6744417  7.5955558  6.9580485  6.1093977 35.0283946 35.0283946 -0.6692039
