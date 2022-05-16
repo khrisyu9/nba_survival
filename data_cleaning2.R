@@ -463,19 +463,54 @@ ggplot(playersummary, aes(injurytime, ogr_prop, label = playername)) +    # ggpl
   geom_point(color = "dodgerblue", size = 2) +
   geom_text_repel(aes(label = ifelse(ogr_prop >= 0.6 & ogr_prop < 1 & injurytime >= 8, playername, "")), color = "orange")
 
+#y_injury row sum
+injury_sum <- rowSums(y_injury)
+injury_df <- data.frame(cbind("game" = seq(1:82), injury_sum))
+#plot the injury sum time series
+ggplot(injury_df, aes(x=game, y=injury_sum)) +
+  geom_line() + 
+  geom_line(color="#fdb927")
 
+##ZIP data frame preprocessing
+injury_period_df <- databygame1
+injury_period_df$period <- 0
 
-##ZIP coefficients
+for (i in 1:nrow(databygame1)){
+  if (databygame1$gamenumber[i]<82){
+    if (databygame1$consecutivegamemissed[i] != 0 & databygame1$consecutivegamemissed[i+1] == 0){
+      injury_period_df$period[i] <- 1
+    }
+  }
+  if (databygame1$gamenumber[i]==82){
+    if (databygame1$consecutivegamemissed[i] != 0){
+      injury_period_df$period[i] <- 1
+    }
+  }
+}
+
+ip_df <- filter(injury_period_df, period == 1)
+
 ##inflated proportion?
+sum(ip_df$consecutivegamemissed == 1)/nrow(ip_df)
+#54.70% injury period are one game rest
+
+ggplot(ip_df, aes(consecutivegamemissed)) + geom_histogram()
+
+##ZIP coefficient
+library(pscl)
+m1 <- zeroinfl(consecutivegamemissed-1 ~ Height + Weight + Age + gamenumber + cumulativeMP + injurytime, 
+                       data = ip_df)
+
+summary(m1)
+
+#coefficients not significant?
+
+
 ##all players share the same inflated pi 
 ##model the period of games injured
 
-## results:
-#[1]  5.6445485 -1.1939356  5.6744417  7.5955558  6.9580485  6.1093977 35.0283946 35.0283946 -0.6692039
-#[10] -4.9490297 -3.1569464
+
 ### add variable: game number for that time (check)
-
-
 
 ## 
 ### use spline to create basis (0-82 games) (3-4 knots, create covariates)
