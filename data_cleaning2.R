@@ -471,6 +471,8 @@ ggplot(injury_df, aes(x=game, y=injury_sum)) +
   geom_line() + 
   geom_line(color="#fdb927")
 
+#05172022 see if pre/post all star weekend injury
+
 ##ZIP data frame preprocessing
 injury_period_df <- databygame1
 injury_period_df$period <- 0
@@ -497,14 +499,25 @@ sum(ip_df$consecutivegamemissed == 1)/nrow(ip_df)
 ggplot(ip_df, aes(consecutivegamemissed)) + geom_histogram()
 
 ##ZIP coefficient
-library(pscl)
-m1 <- zeroinfl(consecutivegamemissed-1 ~ Height + Weight + Age + gamenumber + cumulativeMP + injurytime, 
-                       data = ip_df)
+ip_df2 <- ip_df
+##standardize variables
+ip_df2$Height <- scale(ip_df2$Height)
+ip_df2$Weight <- scale(ip_df2$Weight)
+ip_df2$Age <- scale(ip_df2$Age)
+ip_df2$gamenumber <- scale(ip_df2$gamenumber)
+ip_df2$cumulativegameplayed <- scale(ip_df2$cumulativegameplayed)
+ip_df2$cumulativeMP <- scale(ip_df2$cumulativeMP)
+ip_df2$injurytime <- scale(ip_df2$injurytime)
 
+library(pscl)
+#ZIP model
+m1 <- zeroinfl(consecutivegamemissed-1 ~ Height + Weight + Age + gamenumber + cumulativegameplayed + cumulativeMP + injurytime, 
+                       data = ip_df2)
 summary(m1)
 
-#coefficients not significant?
+#most coefficients not significant?
 
+##write down likelihood function of ZIP, check inflated pi value
 
 ##all players share the same inflated pi 
 ##model the period of games injured
@@ -512,7 +525,6 @@ summary(m1)
 
 ### add variable: game number for that time (check)
 
-## 
 ### use spline to create basis (0-82 games) (3-4 knots, create covariates)
 y_rowmean <- rowMeans(y_injury)
 
