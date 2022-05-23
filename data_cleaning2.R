@@ -473,7 +473,7 @@ ggplot(injury_df, aes(x=game, y=injury_sum)) +
 
 #05172022 see if pre/post all star weekend injury
 
-##ZIP data frame preprocessing
+##ZIP data frame pre-processing
 injury_period_df <- databygame1
 injury_period_df$period <- 0
 
@@ -517,9 +517,11 @@ summary(m1)
 
 #most coefficients not significant?
 
-##write down likelihood function of ZIP, check inflated pi value
+##05172022write down likelihood function of ZIP, check inflated pi value
 
-##all players share the same inflated pi 
+
+
+##assume that all players share the same inflated pi
 ##model the period of games injured
 
 
