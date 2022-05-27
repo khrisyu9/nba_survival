@@ -1,5 +1,7 @@
 # load library
 library(plyr)
+library(data.table)
+library(broom)
 library(rvest)
 library(tidyverse)
 library(readr)
@@ -12,6 +14,7 @@ library(Rcpp)
 library(pglm)
 library(lmtest)
 library(MASS)
+library(ggrepel)
 
 # read and filter players with enough game attendance and minutes
 #read all .csv documents
@@ -347,6 +350,71 @@ any(is.na(x10_wide))
 x10 <- x10_wide[-1]
 any(is.na(x10))
 
+##gamenumberspline1-5
+x <- 1:82
+knots <- c(30, 58)
+theta = c(0.2, 0.4, 0.1, 0.9, 0.6)
+
+#quadratic spline(degree=2) with two cut-points (three regions)
+basis <- bs(x = x, knots = knots, degree = 2,
+            Boundary.knots = c(1,82), intercept = TRUE)
+
+y.spline <- basis %*% theta
+
+dtbasis <- as.data.table(basis)
+dtbasis[, x := seq(0, 1, length.out = .N)]
+
+#plot selected basis
+dtmelt <- melt(data = dtbasis, id = "x", 
+               variable.name = "basis", variable.factor = TRUE)
+ggplot(data=dtmelt, aes(x=x, y=value, group = basis)) +
+  geom_line(aes(color=basis), size = 1) +
+  theme(legend.position = "none") +
+  scale_x_continuous(limits = c(0, 1), 
+                     breaks = c(0, knots, 1)) +
+  theme(panel.grid.minor = element_blank())
+
+##basis1
+databygame2$gamenumberspline1 <- rep(basis[,1], 140)
+x11_long <- databygame2[c(2,3,26)]
+x11_wide <- spread(x11_long, playername, gamenumberspline1)
+any(is.na(x11_wide))
+x11 <- x11_wide[-1]
+any(is.na(x11))
+
+##basis2
+databygame2$gamenumberspline2 <- rep(basis[,2], 140)
+x12_long <- databygame2[c(2,3,27)]
+x12_wide <- spread(x12_long, playername, gamenumberspline2)
+any(is.na(x12_wide))
+x12 <- x12_wide[-1]
+any(is.na(x11))
+
+##basis3
+databygame2$gamenumberspline3 <- rep(basis[,3], 140)
+x13_long <- databygame2[c(2,3,28)]
+x13_wide <- spread(x13_long, playername, gamenumberspline3)
+any(is.na(x13_wide))
+x13 <- x13_wide[-1]
+any(is.na(x13))
+
+##basis4
+databygame2$gamenumberspline4 <- rep(basis[,4], 140)
+x14_long <- databygame2[c(2,3,29)]
+x14_wide <- spread(x14_long, playername, gamenumberspline4)
+any(is.na(x14_wide))
+x14 <- x14_wide[-1]
+any(is.na(x14))
+
+##basis5
+databygame2$gamenumberspline5 <- rep(basis[,5], 140)
+x15_long <- databygame2[c(2,3,30)]
+x15_wide <- spread(x15_long, playername, gamenumberspline5)
+any(is.na(x15_wide))
+x15 <- x15_wide[-1]
+any(is.na(x15))
+
+
 ##injurygame
 y_long <- databygame1[c(2,3,8)]
 y_wide <- spread(y_long, playername, consecutivegamemissed)
@@ -372,41 +440,6 @@ any(is.na(y_injury))
 y_list <- as.list(y_injury[2:ncol(y_injury)])
 
 y_injury <- y_injury[-1]
-
-
-##gamenumberspline
-x <- 1:82
-knots <- c(30, 58)
-theta = c(0.2, 0.4, 0.1, 0.9, 0.6)
-
-#quadratic spline(degree=2) with two cut-points (three regions)
-basis <- bs(x = x, knots = knots, degree = 2,
-            Boundary.knots = c(1,82), intercept = TRUE)
-
-y.spline <- basis %*% theta
-
-dtbasis <- as.data.frame(basis)
-dtbasis[1]
-
-dtbasis[, x := seq(0, 1, length.out = .N)]
-
-#plot selected basis
-dtmelt <- melt(data = dtbasis, id = "x", 
-               variable.name = "basis", variable.factor = TRUE)
-ggplot(data=dtmelt, aes(x=x, y=value, group = basis)) +
-  geom_line(aes(color=basis), size = 1) +
-  theme(legend.position = "none") +
-  scale_x_continuous(limits = c(0, 1), 
-                     breaks = c(0, knots, 1)) +
-  theme(panel.grid.minor = element_blank())
-
-##basis1
-databygame2$gamenumberspline1 <- rep(basis[,1], 140)
-x11_long <- databygame2[c(2,3,26)]
-x11_wide <- spread(x11_long, playername, gamenumberspline1)
-any(is.na(x11_wide))
-x11 <- x11_wide[-1]
-any(is.na(x11))
 
 
 ##hazard game
@@ -439,9 +472,11 @@ likelihood <- function(beta){
   for (j in 1:ncol(y_injury)){
     for (i in 1:82){
       lambda_D[i,j] <- exp(beta[1]*x1[i,j]+beta[2]*x2[i,j]+beta[3]*x3[i,j]+beta[4]*x4[i,j]+beta[5]*x5[i,j]
-                                    +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j]+beta[10]*x10[i,j]+beta[11]*x11[i,j])*z_hazard[i,j]
+                           +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j]+beta[10]*x10[i,j]
+                           +beta[11]*x11[i,j]+beta[12]*x12[i,j]+beta[13]*x13[i,j]+beta[14]*x14[i,j]+beta[15]*x15[i,j])*z_hazard[i,j]
       lambda[i,j] <- exp(beta[1]*x1[i,j]+beta[2]*x2[i,j]+beta[3]*x3[i,j]+beta[4]*x4[i,j]+beta[5]*x5[i,j]
-                                  +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j]+beta[10]*x10[i,j]+beta[11]*x11[i,j])*y_injury[i,j]
+                         +beta[6]*x6[i,j]+beta[7]*x7[i,j]+beta[8]*x8[i,j]+beta[9]*x9[i,j]+beta[10]*x10[i,j]
+                         +beta[11]*x11[i,j]+beta[12]*x12[i,j]+beta[13]*x13[i,j]+beta[14]*x14[i,j]+beta[15]*x15[i,j])*y_injury[i,j]
     }
   } 
   s_ll <- sum(lambda_D)
@@ -450,7 +485,7 @@ likelihood <- function(beta){
 }
 
 ##optim function, with all starting beta = 1
-opt_out <- optim(par = rep(1,11), fn = likelihood, method = "BFGS")
+opt_out <- optim(par = rep(1,15), fn = likelihood, method = "BFGS")
 ##converged betas
 opt_out$par
 
@@ -472,7 +507,6 @@ opt_out$par
 playersummary <- filter(databygame1, gamenumber == 82)
 playersummary$ogr_prop <- playersummary$onegamerest/playersummary$injurytime
 
-library(ggrepel)
 
 ggplot(playersummary, aes(injurytime, ogr_prop, label = playername)) +    # ggplot2 with some labels
   geom_point(color = "dodgerblue", size = 2) +
