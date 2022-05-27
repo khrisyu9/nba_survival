@@ -4,7 +4,7 @@ library(rvest)
 library(tidyverse)
 library(readr)
 library(ggplot2)
-library (splines)
+library(splines)
 library(stringr)
 library(factoextra)
 library(reReg)
@@ -240,9 +240,10 @@ onegamerestper
 ##53.61% missed intervals are one game rest among selected 145 players 
 
 #combine team schedule data
+##added pre/post all star weekend information 05282022
 teamschedule <- read.csv(file = "E:/Bayes_copula/data/2018-2019gamedata/processedteamschedule.csv", na.strings=c(""," ","NA"))
 
-databygame1 <- merge(databygame, teamschedule[2:5], by=c("Tm","gamenumber"), all.x = T)
+databygame1 <- merge(databygame, teamschedule[2:6], by=c("Tm","gamenumber"), all.x = T)
 
 databygame1 <- databygame1[order(databygame1$playername),]
 
@@ -257,6 +258,7 @@ for (i in 1:nrow(databygame1)){
     databygame1$secondbacktoback[i] <- 1
   }
 }
+
 
 #write.csv(databygame1, file = "E:/Bayes_copula/data/playermatrixbygame_1819.csv")
 
@@ -331,7 +333,7 @@ any(is.na(x8))
 
 ##secondbacktoback
 databygame2$secondbacktoback <- scale(databygame2$secondbacktoback)
-x9_long <- databygame2[c(2,3,24)]
+x9_long <- databygame2[c(2,3,25)]
 x9_wide <- spread(x9_long, playername, secondbacktoback)
 any(is.na(x9_wide))
 x9 <- x9_wide[-1]
@@ -373,26 +375,39 @@ y_injury <- y_injury[-1]
 
 
 ##gamenumberspline
-#3 cut-points at games 25, 40, 60
-games <- seq(1:82) #non-linear effects
-games2 <- rowSums(y_injury)
-games2 <- games*games2
-spline_df <- as.data.frame(cbind(games, games2))
-fit <- lm(games2 ~ bs(games,knots = c(25, 40, 60)), data = spline_df)
-summary(fit)
-predicted <- predict(fit,newdata = data.frame(games))
-#Plotting the Regression Line to the scatter plot   
-plot(games,games2,col="grey",xlab="linear",ylab="games")
-points(games, predicted, col="darkgreen",lwd=2,type="l")
-#adding cutpoints
-abline(v=c(25,40,60),lty=2,col="darkgreen")
+x <- 1:82
+knots <- c(30, 58)
+theta = c(0.2, 0.4, 0.1, 0.9, 0.6)
 
-databygame2$gamenumberspline <- rep(scale(predicted),140)
-x11_long <- databygame2[c(2,3,25)]
-x11_wide <- spread(x11_long, playername, gamenumberspline)
+#quadratic spline(degree=2) with two cut-points (three regions)
+basis <- bs(x = x, knots = knots, degree = 2,
+            Boundary.knots = c(1,82), intercept = TRUE)
+
+y.spline <- basis %*% theta
+
+dtbasis <- as.data.frame(basis)
+dtbasis[1]
+
+dtbasis[, x := seq(0, 1, length.out = .N)]
+
+#plot selected basis
+dtmelt <- melt(data = dtbasis, id = "x", 
+               variable.name = "basis", variable.factor = TRUE)
+ggplot(data=dtmelt, aes(x=x, y=value, group = basis)) +
+  geom_line(aes(color=basis), size = 1) +
+  theme(legend.position = "none") +
+  scale_x_continuous(limits = c(0, 1), 
+                     breaks = c(0, knots, 1)) +
+  theme(panel.grid.minor = element_blank())
+
+##basis1
+databygame2$gamenumberspline1 <- rep(basis[,1], 140)
+x11_long <- databygame2[c(2,3,26)]
+x11_wide <- spread(x11_long, playername, gamenumberspline1)
 any(is.na(x11_wide))
 x11 <- x11_wide[-1]
 any(is.na(x11))
+
 
 ##hazard game
 z_long <- databygame1[c(2,3,8)]
@@ -471,7 +486,33 @@ ggplot(injury_df, aes(x=game, y=injury_sum)) +
   geom_line() + 
   geom_line(color="#fdb927")
 
-#05172022 see if pre/post all star weekend injury
+#05172022 see if pre/post all star weekend injury (check)
+## add back to y_injury to databygame2
+y_injury_long <- y_injury %>% gather(playername, injured)
+y_injury_long$gamenumber <- databygame2$gamenumber
+databygame3 <- merge(databygame1, y_injury_long, by=c("playername", "gamenumber"), all.x = T)
+databygame3$preasw_injured <- 0
+databygame3$postasw_injured <- 0
+for (i in 1:nrow(databygame3)){
+  if (databygame3$injured[i] == 1){
+    if (databygame3$postasw[i] == 1){
+      databygame3$postasw_injured[i] <- 1
+    }
+    else {databygame3$preasw_injured[i] <- 1}
+  }
+}
+
+total_preasw_injury <- sum(databygame3$preasw_injured)
+total_postasw_injury <- sum(databygame3$postasw_injured)
+pre_post_asw_injury_ratio <- total_preasw_injury/total_postasw_injury
+total_postasw_games <- sum(databygame3$postasw)
+total_preasw_games <- nrow(databygame3) - total_postasw_games
+pre_post_asw_games_ratio <- total_preasw_games/total_postasw_games 
+
+pre_post_asw_injury_ratio #1.489247
+pre_post_asw_games_ratio #2.390431
+#injury ratio is smaller than games ratio--it's more likely to have post all-star weekend injury?
+#or just the end of regular season rest for major players
 
 ##ZIP data frame pre-processing
 injury_period_df <- databygame1
