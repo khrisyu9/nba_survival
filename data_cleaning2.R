@@ -603,7 +603,7 @@ ip_df2$cumulativeMP <- scale(ip_df2$cumulativeMP)
 ip_df2$injurytime <- scale(ip_df2$injurytime)
 
 #ZIP model
-m1 <- zeroinfl(consecutivegamemissed-1 ~ Height + Weight + Age + gamenumber + cumulativegameplayed + cumulativeMP + injurytime, 
+m1 <- zeroinfl(consecutivegamemissed-1 ~ Height + Weight + Age + gamenumber + cumulativegameplayed + cumulativeMP + injurytime|Height + Weight + Age + gamenumber + cumulativegameplayed + cumulativeMP + injurytime, 
                        data = ip_df2)
 summary(m1)
 
@@ -633,28 +633,36 @@ x5 <- ip_df2$cumulativeMP
 ##x6: injury time
 x6 <- ip_df2$injurytime
 
+##x7: Game Number
+x7 <- ip_df2$gamenumber
+
 ##y: total number of injured games
 y <- ip_df2$consecutivegamemissed - 1
 
 ##likelihood function
-likelihood <- function(beta){
-  lambda <- rep(0,nrow(ip_df2))
+likelihood <- function(param){
+  beta <- param[1:7]
+  lambda <- param[8]
   u <- rep(0,nrow(ip_df2))
+  like_1 <- rep(0,nrow(ip_df2))
   like_2 <- rep(0,nrow(ip_df2))
   for (i in 1:nrow(ip_df2)){
-      lambda[i] <- exp(log(t[i])+beta[1]*x1[i]+beta[2]*x2[i]+beta[3]*x3[i]+beta[4]*x4[i]+beta[5]*x5[i]+beta[6]*x6[i])
-      u[i] <- lambda[i]
+      u[i] <- exp(beta[1]*x1[i]+beta[2]*x2[i]+beta[3]*x3[i]+beta[4]*x4[i]+beta[5]*x5[i]
+                  +beta[6]*x6[i]+beta[7]*x7[i])
+      if (y[i] == 0){
+        like_1[i] <- log(lambda+exp(-u[i]))
+      }
       if (y[i] != 0){
         like_2[i] <- y[i]*log(u[i])-u[i]-log(factorial(y[i]))
       }
   } 
-  l1 <- sum(log(lambda)+exp(-u), log=TRUE)
-  l2 <- sum(like_2, log=TRUE)
+  l1 <- sum(like_1)
+  l2 <- sum(like_2)
   return(l1+l2)
 }
 
-##optim function, with all starting beta = 1
-opt_out <- optim(par = rep(0,6), fn = likelihood, method = "BFGS")
+##optim function, with all starting beta = 0 and lambda = 0.5
+opt_out <- optim(par = c(0,0,0,0,0,0,0,0.5), fn = likelihood, method = "BFGS")
 ##converged betas
 opt_out$par
 
