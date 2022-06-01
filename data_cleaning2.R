@@ -15,6 +15,7 @@ library(pglm)
 library(lmtest)
 library(MASS)
 library(ggrepel)
+library(pscl)
 
 # read and filter players with enough game attendance and minutes
 #read all .csv documents
@@ -489,6 +490,23 @@ opt_out <- optim(par = rep(1,15), fn = likelihood, method = "BFGS")
 ##converged betas
 opt_out$par
 
+## new coefficient results:
+#minutesplayed 4.7946895
+#onegamerest -0.9157946 
+#height 4.9053790   
+#weight 6.4626323 
+#age 5.6673623 
+#consecutiveMP 5.1804011 
+#gamegap 30.5134809 
+#homegame 30.5134809 
+#secondbacktoback -0.4482283
+#cumulativegameplayed -4.1618719 
+#gamenumberspline1 4.2929746
+#gamenumberspline2 1.0000030
+#gamenumberspline3 1.0000291
+#gamenumberspline4 1.0001015
+#gamenumberspline5 1.0000915
+
 ## coefficient results:
 #minutesplayed 5.6445485 
 #onegamerest -1.1939356  
@@ -579,12 +597,11 @@ ip_df2 <- ip_df
 ip_df2$Height <- scale(ip_df2$Height)
 ip_df2$Weight <- scale(ip_df2$Weight)
 ip_df2$Age <- scale(ip_df2$Age)
-ip_df2$gamenumber <- scale(ip_df2$gamenumber)
+#ip_df2$gamenumber <- scale(ip_df2$gamenumber) not scale gamenumber at first
 ip_df2$cumulativegameplayed <- scale(ip_df2$cumulativegameplayed)
 ip_df2$cumulativeMP <- scale(ip_df2$cumulativeMP)
 ip_df2$injurytime <- scale(ip_df2$injurytime)
 
-library(pscl)
 #ZIP model
 m1 <- zeroinfl(consecutivegamemissed-1 ~ Height + Weight + Age + gamenumber + cumulativegameplayed + cumulativeMP + injurytime, 
                        data = ip_df2)
@@ -592,13 +609,60 @@ summary(m1)
 
 #most coefficients not significant?
 
-##05172022write down likelihood function of ZIP, check inflated pi value
 
+
+##05172022 write down likelihood function of ZIP, check inflated pi value
+##t: Game Number
+t <- ip_df2$gamenumber
+
+##x1: Player Height
+x1 <- ip_df2$Height
+
+##x2: Player Weight
+x2 <- ip_df2$Weight
+
+##x3: Player Age
+x3 <- ip_df2$Age
+
+##x4: cumulative game played 
+x4 <- ip_df2$cumulativegameplayed
+
+##x5: cumulative minutes played
+x5 <- ip_df2$cumulativeMP
+
+##x6: injury time
+x6 <- ip_df2$injurytime
+
+##y: total number of injured games
+y <- ip_df2$consecutivegamemissed - 1
+
+##likelihood function
+likelihood <- function(beta){
+  lambda <- rep(0,nrow(ip_df2))
+  u <- rep(0,nrow(ip_df2))
+  like_2 <- rep(0,nrow(ip_df2))
+  for (i in 1:nrow(ip_df2)){
+      lambda[i] <- exp(log(t[i])+beta[1]*x1[i]+beta[2]*x2[i]+beta[3]*x3[i]+beta[4]*x4[i]+beta[5]*x5[i]+beta[6]*x6[i])
+      u[i] <- lambda[i]
+      if (y[i] != 0){
+        like_2[i] <- y[i]*log(u[i])-u[i]-log(factorial(y[i]))
+      }
+  } 
+  l1 <- sum(log(lambda)+exp(-u), log=TRUE)
+  l2 <- sum(like_2, log=TRUE)
+  return(l1+l2)
+}
+
+##optim function, with all starting beta = 1
+opt_out <- optim(par = rep(0,6), fn = likelihood, method = "BFGS")
+##converged betas
+opt_out$par
 
 
 ##assume that all players share the same inflated pi
 ##model the period of games injured
 
+##
 
 ### add variable: game number for that time (check)
 
