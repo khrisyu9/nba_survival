@@ -16,6 +16,8 @@ library(lmtest)
 library(MASS)
 library(ggrepel)
 library(pscl)
+library(nimble)
+
 
 # read and filter players with enough game attendance and minutes
 #read all .csv documents
@@ -588,11 +590,15 @@ ip_df <- filter(injury_period_df, period == 1)
 ##inflated proportion?
 sum(ip_df$consecutivegamemissed == 1)/nrow(ip_df)
 #54.70% injury period are one game rest
-
 ggplot(ip_df, aes(consecutivegamemissed)) + geom_histogram()
 
+##remove injuries before the season by cumulativeMP 
+ip_df1.5 <- ip_df[ip_df$cumulativeMP!=0,]
+
+ggplot(ip_df1.5, aes(consecutivegamemissed)) + geom_histogram()
+
 ##ZIP coefficient
-ip_df2 <- ip_df
+ip_df2 <- ip_df1.5
 ##standardize variables
 ip_df2$Height <- scale(ip_df2$Height)
 ip_df2$Weight <- scale(ip_df2$Weight)
@@ -612,67 +618,134 @@ summary(m1)
 
 
 ##05172022 write down likelihood function of ZIP, check inflated pi value
-##t: Game Number
-t <- ip_df2$gamenumber
 
 ##x1: Player Height
 x1 <- ip_df2$Height
+any(is.na(x1))
 
 ##x2: Player Weight
 x2 <- ip_df2$Weight
+any(is.na(x2))
 
 ##x3: Player Age
 x3 <- ip_df2$Age
+any(is.na(x3))
 
 ##x4: cumulative game played 
 x4 <- ip_df2$cumulativegameplayed
+any(is.na(x4))
 
-##x5: cumulative minutes played
+##x5: cumulative minutes played per game
 x5 <- ip_df2$cumulativeMP
+any(is.na(x5))
 
 ##x6: injury time
 x6 <- ip_df2$injurytime
+any(is.na(x6))
 
 ##x7: Game Number
 x7 <- ip_df2$gamenumber
+any(is.na(x7))
 
 ##y: total number of injured games
 y <- ip_df2$consecutivegamemissed - 1
+any(is.na(y))
 
 ##likelihood function
 likelihood <- function(param){
   beta <- param[1:7]
-  lambda <- param[8]
-  u <- rep(0,nrow(ip_df2))
-  like_1 <- rep(0,nrow(ip_df2))
-  like_2 <- rep(0,nrow(ip_df2))
+  zeroProb <- param[8]
+  lambda <- rep(0,nrow(ip_df2))
+  like <- rep(0,nrow(ip_df2))
   for (i in 1:nrow(ip_df2)){
-      u[i] <- exp(beta[1]*x1[i]+beta[2]*x2[i]+beta[3]*x3[i]+beta[4]*x4[i]+beta[5]*x5[i]
-                  +beta[6]*x6[i]+beta[7]*x7[i])
+      lambda[i] <- exp(beta[1]*x1[i]+beta[2]*x2[i]+beta[3]*x3[i]+beta[4]*x4[i]+beta[5]
+                       +beta[6]*x6[i]+beta[7]*x7[i])
       if (y[i] == 0){
-        like_1[i] <- log(lambda+exp(-u[i]))
+        like[i] <- log(zeroProb + (1 - zeroProb) * dpois(0, lambda[i], log = FALSE))
       }
       if (y[i] != 0){
-        like_2[i] <- y[i]*log(u[i])-u[i]-log(factorial(y[i]))
+        like[i] <- dpois(y[i], lambda[i], log = TRUE) + log(1 - zeroProb)
       }
   } 
-  l1 <- sum(like_1)
-  l2 <- sum(like_2)
-  return(l1+l2)
+  l <- sum(like)
+  return(l)
 }
 
-##optim function, with all starting beta = 0 and lambda = 0.5
-opt_out <- optim(par = c(0,0,0,0,0,0,0,0.5), fn = likelihood, method = "BFGS")
+##06032022 use log-likelihood-controlled Metropolis-Hastings method in Nimble
+##
+set.seed(1)
+code <- nimbleCode({
+  beta[1] ~ dnorm(0,sd = 100)
+  beta[2] ~ dnorm(0,sd = 100)
+  beta[3] ~ dnorm(0,sd = 100)
+  beta[4] ~ dnorm(0,sd = 100)
+  beta[5] ~ dnorm(0,sd = 100)
+  beta[6] ~ dnorm(0,sd = 100)
+  beta[7] ~ dnorm(0,sd = 100)
+  zeroProb ~ dunif(0, 1)
+})
+
+llFun <- nimbleFunction(
+  setup = function(model) { },
+  run = function() {
+    
+    beta[1] <- model$beta[1]
+    beta[2] <- model$beta[2]
+    beta[3] <- model$beta[3]
+    beta[4] <- model$beta[4]
+    beta[5] <- model$beta[5]
+    beta[6] <- model$beta[6]
+    beta[7] <- model$beta[7]
+    
+    zeroProb <- model$zeroProb
+    
+    lambda <- rep(0,479)
+    like <- rep(0,479)
+    for (i in 1:479){
+      lambda[i] <- exp(beta[1]*x1[i]+beta[2]*x2[i]+beta[3]*x3[i]+beta[4]*x4[i]+beta[5]
+                       +beta[6]*x6[i]+beta[7]*x7[i])
+      if (y[i] == 0){
+        like[i] <- log(zeroProb + (1 - zeroProb) * dpois(0, lambda[i], log = FALSE))
+      }
+      if (y[i] != 0){
+        like[i] <- dpois(y[i], lambda[i], log = TRUE) + log(1 - zeroProb)
+      }
+    } 
+    l <- sum(like) # estimate the log-likelihood
+    
+      returnType(double())
+    return(l)
+  }
+)
+
+
+RllFun <- llFun(Rmodel)
+RllFun$run()
+
+mcmcConf <- configureMCMC(Rmodel, nodes = NULL)
+
+mcmcConf$addSampler(target = c("beta[1]", "beta[2]", "beta[3]", "beta[4]", "beta[5]",
+                               "beta[6]","beta[7]", "zeroProb"),
+                    type = "RW_llFunction_block",
+                    control = list(llFunction = RllFun,
+                                   adaptInterval=20, 
+                                   adaptive=TRUE,
+                                   includesTarget = FALSE))
+
+
+
+##optim function, with all starting beta = 0.5 and zero_Prob = 0.5
+opt_out <- optim(par = rep(0.1,2), fn = likelihood, method = "L-BFGS-B", 
+                 lower = c(-100,0), upper = c(100,1))
 ##converged betas
 opt_out$par
+
+##
 
 
 ##assume that all players share the same inflated pi
 ##model the period of games injured
 
-##
-
-### add variable: game number for that time (check)
 
 ### use spline to create basis (0-82 games) (3-4 knots, create covariates)
 y_rowmean <- rowMeans(y_injury)
