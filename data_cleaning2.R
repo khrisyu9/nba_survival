@@ -719,6 +719,22 @@ llFun <- nimbleFunction(
 )
 
 
+constants <- list(N = pp$n)
+
+data <- list(
+  x1=x1,
+  x2=x2,
+  x3=x3,
+  x4=x4,
+  x5=x5,
+  x6=x6,
+  x7=x7,
+)
+
+
+
+Rmodel <- nimbleModel(code=code, constants=constants, data=data, inits=inits, check = FALSE)
+
 RllFun <- llFun(Rmodel)
 RllFun$run()
 
